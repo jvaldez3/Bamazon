@@ -20,41 +20,41 @@ connection.connect(function (err) {
 
 
 
-function buyProduct() {
-    inquirer.prompt([{
-            name: "buy",
-            type: "input",
-            message: "Please enter the ID of the item you would like to buy."
-        },
-        {
-            name: "quantity",
-            type: "input",
-            message: "How many would you like to buy?"
-        }
-    ]).then(function (answer) {
-        var itemID = parseInt(answer.buy);
-        var quantity = answer.quantity;
-        connection.query(`SELECT * FROM products WHERE item_id = ${itemID}`, function (err, results) {
-            if (err) throw err;
-            else {
-                if (results[0].stock_quantity >= answer.quantity) {
-                    var item = results[0];
-                    var totalCost = item.price * quantity;
-                    connection.query(`UPDATE products SET stock_quantity = stock_quantity - ${quantity} WHERE item_id = ${itemID}`, function (err, results2) {
-                        if (err) throw err;
-                        else {
-                            console.log("Your Total Comes To: " + totalCost)
-                        }
-                        connection.end();
-                    })
-                } else {
-                    console.log("Insufficient Quantity!");
-                    connection.end();
-                }
-            }
-        })
-    })
-}
+// function buyProduct() {
+//     inquirer.prompt([{
+//             name: "buy",
+//             type: "input",
+//             message: "Please enter the ID of the item you would like to buy."
+//         },
+//         {
+//             name: "quantity",
+//             type: "input",
+//             message: "How many would you like to buy?"
+//         }
+//     ]).then(function (answer) {
+//         var itemID = parseInt(answer.buy);
+//         var quantity = answer.quantity;
+//         connection.query(`SELECT * FROM products WHERE item_id = ${itemID}`, function (err, results) {
+//             if (err) throw err;
+//             else {
+//                 if (results[0].stock_quantity >= answer.quantity) {
+//                     var item = results[0];
+//                     var totalCost = item.price * quantity;
+//                     connection.query(`UPDATE products SET stock_quantity = stock_quantity - ${quantity} WHERE item_id = ${itemID}`, function (err, results2) {
+//                         if (err) throw err;
+//                         else {
+//                             console.log("Your Total Comes To: " + totalCost)
+//                         }
+//                         connection.end();
+//                     })
+//                 } else {
+//                     console.log("Insufficient Quantity!");
+//                     connection.end();
+//                 }
+//             }
+//         })
+//     })
+// }
 
 function initTable() {
     var query = "SELECT * FROM products";
@@ -63,11 +63,11 @@ function initTable() {
         // console.log(data)
 
         var table = new Table({
-            head: ["Product ID", "Product Name", "Price", "Stock Quantity"],
-            colWidths: [15, 40, 20, 20]
+            head: ["Product ID", "Product Name", "Department Name", "Price", "Stock Quantity"],
+            colWidths: [15, 40, 20, 20, 20]
         });
         for (var i = 0; i < data.length; i++) {
-            table.push([data[i].item_id, data[i].product_name, data[i].price, data[i].stock_quantity])
+            table.push([data[i].item_id, data[i].product_name, data[i].department_name, data[i].price, data[i].stock_quantity])
         };
         inquirer.prompt({
             name: "start",
@@ -106,11 +106,11 @@ function viewLowInv() {
         if (err) throw err;
 
         var table = new Table({
-            head: ["Product ID", "Product Name", "Price", "Stock Quantity"],
-            colWidths: [15, 40, 20, 20]
+            head: ["Product ID", "Product Name", "Department Name", "Price", "Stock Quantity"],
+            colWidths: [15, 40, 20, 20, 20]
         });
         for (var i = 0; i < data.length; i++) {
-            table.push([data[i].item_id, data[i].product_name, data[i].price, data[i].stock_quantity])
+            table.push([data[i].item_id, data[i].product_name, data[i].department_name, data[i].price, data[i].stock_quantity])
         };
         console.log("\n\n" + table.toString() + "\n\n");
         initTable();
@@ -163,5 +163,56 @@ function addInv() {
             })
         }
 
+    })
+}
+
+function createNewProduct() {
+    inquirer.prompt([{
+            name: "product",
+            type: "input",
+            message: "What product would you like to add?"
+        },
+        {
+            name: "departmentName",
+            type: "input",
+            message: "What department will this product go into?"
+        }, {
+            name: "price",
+            type: "input",
+            message: "What is the price of this product?"
+        },
+        {
+            name: "amount",
+            type: "input",
+            message: "How many would you like to add?"
+        }
+    ]).then(function (answer) {
+        connection.query(
+            "INSERT INTO products SET ?", {
+                product_name: answer.product,
+                department_name: answer.departmentName,
+                price: parseInt(answer.price),
+                stock_quantity: parseInt(answer.amount)
+            },
+
+            function (err, data) {
+                if (err) {
+                    console.log("Please Try Again");
+                }
+                if (!err) {
+
+                    var table = new Table({
+                        head: ["Product ID", "Product Name", "Department Name", "Price", "Stock Quantity"],
+                        colWidths: [15, 40, 20, 20, 20]
+                    });
+                    for (var i = 0; i < data.length; i++) {
+                        table.push([data[i].item_id, data[i].product_name, data[i].department_name, data[i].price, data[i].stock_quantity])
+                    };
+                    console.log(`\nYou have added ${answer.product} to the inventory. You have ${answer.amount} in stock.\n`)
+                    console.log("\n\n" + table.toString() + "\n\n");
+                    initTable();
+                }
+            }
+        );
     })
 }
